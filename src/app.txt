@@ -1,0 +1,30 @@
+<script setup>
+import MyBar from './views/mybar.vue';
+import Main  from './views/main.vue';
+import Evaluationform from './views/evaluationform.vue';
+import signup from './pages/signup.vue';
+</script>
+
+<template>
+  <header>
+    <MyBar />
+  </header>
+  <main>
+    <Main />
+    <Evaluationform />
+    <signup />
+  </main>
+  <footer>   
+  </footer>
+</template>
+
+<script>
+export default {
+  name: 'App',
+  components: {
+    MyBar,
+    Main,Evaluationform,signup
+  }
+};
+</script>
+

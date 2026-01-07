@@ -1,0 +1,133 @@
+import express from 'express';
+const app = express()
+const port = 3000
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import mysql from 'mysql2'
+
+let users = [];
+app.use(cors());
+
+
+const db = mysql.createConnection({
+    host:'localhost',
+    user: 'root',
+    password: '',
+    database: 'hrsystem'
+});
+
+db.connect(err => {
+    if(err) {
+        console.error("DB connect error:", err);
+        process.exit(1);
+    }
+    console.log("MySQL Connected");
+});
+
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
+
+app.use(bodyParser.json());
+
+app.get('/users', function (req,res, next) {
+    db.query(
+        'SELECT * FROM `users`',
+        function (err, results, fields) {
+            res.json(results);
+        }
+    );
+})
+
+app.get('/users/:id', function (req, res, next) {
+    const id = req.params.id;
+    db.query(
+        'SELECT * FROM `users` WHERE `id` = ?',
+        [id],
+        function (err, results) {
+            res.json(results);
+        }
+    );
+})
+
+
+app.post('/signup', (req, res) => {
+    const { username, password, email } = req.body;
+    
+    if(!username || !password || !email) {
+        return res.status(400).json({ message: 'All fields are required'});
+    }
+
+    const newUser = { 
+        id: nextId++,
+        username,
+        password,
+        email
+    };
+
+    users.push(newUser);
+
+    console.log('Current users:', users);
+
+    res.status(200).json ({ message: 'User registered successfully!',
+        user: newUser });
+});
+
+app.put('/users/:id', (req, res) => {
+    const userId = Number(req.params.id); // ✅ ใช้ req.params
+    const userIndex = users.findIndex(user => user.id === userId);
+
+    if(userIndex === -1) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    users[userIndex] = {
+        ...users[userIndex],
+        ...req.body
+    };
+
+    res.json({ message: 'User updated successfully', user: users[userIndex] });
+});
+
+
+app.patch('/users/:id', (req, res) => {
+    const userId = parseInt(req.params.id); // ✅ ใช้ req.params
+    const data = req.body;
+    const userIndex = users.findIndex(user => user.id === userId);
+
+    if(userIndex === -1) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (data.username !== undefined){
+        users[userIndex].username = data.username;
+    }
+    if (data.password !== undefined){
+        users[userIndex].password = data.password;
+    }
+    if (data.email !== undefined){
+        users[userIndex].email = data.email;       
+    }
+
+    res.json({ message: 'User updated successfully', user: users[userIndex] });
+});
+
+
+app.delete('/users/:id', (req, res) => {
+    const deletedIndex = users.findIndex(user => user.id === Number (req.params.id))
+    if (deletedIndex !== -1){
+     const deletedUser = users.splice(deletedIndex , 1)[0]
+     res.json({ message: 'User deleted successfully' , user: deletedUser })
+    } else {
+    res.status(404).json({ error: 'User not found' })
+    }
+})
+
+
+
+
+
+app.listen(port, () => {
+    console.log(`Server running at <http://localhost:${port}/>`)
+});
